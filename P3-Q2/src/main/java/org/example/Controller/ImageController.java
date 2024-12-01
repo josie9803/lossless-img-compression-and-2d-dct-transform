@@ -2,9 +2,6 @@ package org.example.Controller;
 
 import org.example.Model.ImageModel;
 import org.example.View.ImageView;
-
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -19,18 +16,8 @@ public class ImageController {
         view.setVisible(true);
     }
     public void init(){
-        view.addOpenFileButtonListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                handleFileOpen();
-            }
-        });
-        view.addExitButtonListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                System.exit(0);
-            }
-        });
+        view.addOpenFileButtonListener(e -> handleFileOpen());
+        view.addExitButtonListener(e -> System.exit(0));
     }
     private void handleFileOpen() {
         File selectedFile = view.showOpenFileDialog();
@@ -39,8 +26,9 @@ public class ImageController {
                 System.out.println("Selected file: " + selectedFile.getAbsolutePath());
                 model.readBmpFile(selectedFile);
                 BufferedImage image = model.getImage();
-                System.out.println("compression ratio: " + model.huffmanCompression());
-                view.updateImage(image);
+                double ratio = model.getCompressionRatio();
+                System.out.println("compression ratio: " + ratio);
+                view.updateImage(image, ratio);
             } catch (IOException e) {
                 view.showError("Error loading BMP file: " + e.getMessage());
             }

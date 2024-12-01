@@ -1,14 +1,12 @@
 package org.example.Model;
 
-import java.util.PriorityQueue;
-
 class HuffmanNode implements Comparable<HuffmanNode> {
-    int value;  // Pixel value
-    int frequency;  // Frequency of the pixel
+    int pixelValue;
+    int frequency;
     HuffmanNode left, right;
 
     public HuffmanNode(int value, int frequency) {
-        this.value = value;
+        this.pixelValue = value;
         this.frequency = frequency;
         this.left = this.right = null;
     }

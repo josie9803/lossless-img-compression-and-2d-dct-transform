@@ -2,11 +2,18 @@ package org.example.Model;
 
 import java.util.*;
 
-public class HuffmanCoding {
-    private Map<Integer, String> huffmanCodes = new HashMap<>();
-    private HuffmanNode root;
+public class HuffmanCompression {
+    private final Map<Integer, String> huffmanCodes = new HashMap<>();
 
-    public void buildTree(Map<Integer, Integer> frequencyMap) {
+    public void compress(int[] data){
+        Map<Integer, Integer> frequencyMap = new HashMap<>();
+        for (int value : data) {
+            frequencyMap.put(value, frequencyMap.getOrDefault(value, 0) + 1);
+        }
+        buildTree(frequencyMap);
+    }
+
+    private void buildTree(Map<Integer, Integer> frequencyMap) {
         PriorityQueue<HuffmanNode> pq = new PriorityQueue<>();
 
         // Create a node for each pixel value and add to the priority queue
@@ -28,7 +35,7 @@ public class HuffmanCoding {
         }
 
         // Root of the tree
-        root = pq.poll();
+        HuffmanNode root = pq.poll();
         generateCodes(root, "");
     }
 
@@ -37,7 +44,7 @@ public class HuffmanCoding {
 
         // If it's a leaf node, store the code
         if (node.left == null && node.right == null) {
-            huffmanCodes.put(node.value, code);
+            huffmanCodes.put(node.pixelValue, code);
         }
 
         generateCodes(node.left, code + "0");
@@ -46,10 +53,6 @@ public class HuffmanCoding {
 
     public Map<Integer, String> getHuffmanCodes() {
         return huffmanCodes;
-    }
-
-    public HuffmanNode getRoot() {
-        return root;
     }
 }
 

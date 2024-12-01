@@ -11,7 +11,6 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 
 public class ImageView extends JFrame {
-    private final JLabel imageLabel;
     private JMenuItem openFileItem;
     private JMenuItem exitItem;
 
@@ -20,7 +19,7 @@ public class ImageView extends JFrame {
         setSize(1000, 800);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
-        imageLabel = new JLabel();
+        JLabel imageLabel = new JLabel();
         imageLabel.setHorizontalAlignment(JLabel.CENTER);
         getContentPane().add(imageLabel, BorderLayout.CENTER);
 
@@ -61,11 +60,23 @@ public class ImageView extends JFrame {
         });
     }
 
-    public void updateImage(BufferedImage image) {
+    public void updateImage(BufferedImage image, double ratio) {
         if (image != null) {
-            ImageIcon imageIcon = new ImageIcon(image);
-            imageLabel.setIcon(imageIcon);
-            imageLabel.repaint();
+            getContentPane().removeAll();
+            JPanel panel = new JPanel(new GridLayout(1, 2));
+
+            JLabel imageLabel = new JLabel(new ImageIcon(image));
+            imageLabel.setHorizontalAlignment(JLabel.CENTER);
+            panel.add(imageLabel);
+
+            JLabel ratioLabel = new JLabel();
+            ratioLabel.setText("Huffman Coding: " + String.format("%.2f", ratio));
+            ratioLabel.setHorizontalAlignment(JLabel.CENTER);
+            panel.add(ratioLabel);
+
+            getContentPane().add(panel, BorderLayout.CENTER);
+            revalidate();
+            repaint();
         }
     }
 

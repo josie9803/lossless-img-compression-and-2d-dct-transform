@@ -5,15 +5,22 @@ import org.apache.commons.imaging.Imaging;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 public class ImageModel {
     private BufferedImage image;
+    private int imageWidth;
+    private int imageHeight;
+    private int[] redChannel;
+    private int[] greenChannel;
+    private int[] blueChannel;
+    public BufferedImage getImage(){
+        return image;
+    }
     public void readBmpFile(File bmpFile) throws IOException {
-        // Use Apache Commons Imaging to read the BMP file
         try {
             image = Imaging.getBufferedImage(bmpFile);
+            imageWidth = image.getWidth();
+            imageHeight = image.getHeight();
         } catch (ImageReadException e) {
             throw new RuntimeException(e);
         }
@@ -21,63 +28,69 @@ public class ImageModel {
             throw new IOException("Invalid BMP file.");
         }
     }
-    public BufferedImage getImage(){
-        return image;
+
+    private void extractRGBChannels() {
+        redChannel = new int[imageWidth * imageHeight];
+        greenChannel = new int[imageWidth * imageHeight];
+        blueChannel = new int[imageWidth * imageHeight];
+
+        int index = 0;
+        for (int y = 0; y < imageHeight; y++) {
+            for (int x = 0; x < imageWidth; x++) {
+                int rgb = image.getRGB(x, y);
+                redChannel[index] = (rgb >> 16) & 0xFF;
+                greenChannel[index] = (rgb >> 8) & 0xFF;
+                blueChannel[index] = rgb & 0xFF;
+                index++;
+            }
+        }
+//        return new int[][]{redChannel, greenChannel, blueChannel};
     }
+    private String compressChannel(int[] channel) {
+        extractRGBChannels();
+        // Build Huffman tree and generate codes
+        HuffmanCompression huffmanCompression = new HuffmanCompression();
+        huffmanCompression.compress(channel);
 
-    public double huffmanCompression() {
-        Map<Integer, Integer> frequencyMap = new HashMap<>();
-        int width = image.getWidth();
-        int height = image.getHeight();
-
-        // Calculate frequency of each pixel value
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                int pixel = image.getRGB(x, y);
-                frequencyMap.put(pixel, frequencyMap.getOrDefault(pixel, 0) + 1);
+        // Encode the channel
+        StringBuilder encodedData = new StringBuilder();
+        for (int pixel : channel) {
+            encodedData.append(huffmanCompression.getHuffmanCodes().get(pixel));
+        }
+        return encodedData.toString();
+    }
+    public String compressWholeImg() {
+        //extract pixel data
+        int[] data = new int[imageWidth * imageHeight];
+        int index = 0;
+        for (int y = 0; y < imageHeight; y++) {
+            for (int x = 0; x < imageWidth; x++) {
+                 data[index] = image.getRGB(x,y);
+                 index++;
             }
         }
 
         // Step 2: Build Huffman Tree
-        HuffmanCoding huffmanCoding = new HuffmanCoding();
-        huffmanCoding.buildTree(frequencyMap);
+        HuffmanCompression huffmanCompression = new HuffmanCompression();
+        huffmanCompression.compress(data);
 
         // Step 3: Encode the pixel data
         StringBuilder encodedData = new StringBuilder();
-        for (int y = 0; y < image.getHeight(); y++) {
-            for (int x = 0; x < image.getWidth(); x++) {
-                int pixel = image.getRGB(x, y);
-                encodedData.append(huffmanCoding.getHuffmanCodes().get(pixel));
-            }
+        for (int pixel : data) {
+            encodedData.append(huffmanCompression.getHuffmanCodes().get(pixel));
         }
-
-        // Calculate compression ratio
-        int originalBits = width * height * 24; // 24 bits per pixel for RGB
-        return (double) originalBits / (double) encodedData.length();
+        return encodedData.toString();
     }
-
-//    public static double predictorHuffmanCompression(BufferedImage image) {
-//        // Apply a simple predictor (e.g., left neighbor predictor)
-//        int width = image.getWidth();
-//        int height = image.getHeight();
-//        Map<Integer, Integer> frequencyMap = new HashMap<>();
-//
-//        for (int y = 0; y < height; y++) {
-//            for (int x = 0; x < width; x++) {
-//                int currentPixel = image.getRGB(x, y);
-//                int leftPixel = (x > 0) ? image.getRGB(x - 1, y) : 0;
-//                int predictionError = currentPixel - leftPixel;
-//
-//                frequencyMap.put(predictionError, frequencyMap.getOrDefault(predictionError, 0) + 1);
-//            }
-//        }
-//
-//        // Huffman compression on prediction errors
-//        HuffmanCoding huffmanCoding = new HuffmanCoding();
-//        int compressedBits = huffmanCoding.compress(frequencyMap);
-//
-//        // Calculate compression ratio
-//        int originalBits = width * height * 24; // 24 bits per pixel for RGB
-//        return (double) originalBits / compressedBits;
-//    }
+    public double getCompressionRatio(){
+        int originalBits = image.getWidth() * image.getHeight() * 24;
+//        String redCompressed = compressChannel(redChannel);
+//        String greenCompressed = compressChannel(greenChannel);
+//        String blueCompressed = compressChannel(blueChannel);
+//        int compressedSize = redCompressed.length()
+//        + greenCompressed.length() + blueCompressed.length();
+        int compressedSize = compressWholeImg().length();
+        System.out.println("original size: " + originalBits);
+        System.out.println("compressed size: " + compressedSize);
+        return (double)originalBits / compressedSize;
+    }
 }
