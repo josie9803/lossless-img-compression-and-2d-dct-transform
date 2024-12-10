@@ -1,102 +1,51 @@
 class DCTModel {
-    public double[][] applyDCT(double[][] matrix, int N, boolean rowFirst) {
-        double[][] intermediate = new double[N][N];
-        double[][] result = new double[N][N];
 
-        if (rowFirst) {
-            for (int i = 0; i < N; i++) {
-                intermediate[i] = compute1DDCT(matrix[i], N);
-            }
-            for (int j = 0; j < N; j++) {
-                double[] column = new double[N];
-                for (int i = 0; i < N; i++) {
-                    column[i] = intermediate[i][j];
-                }
-                double[] dctColumn = compute1DDCT(column, N);
-                for (int i = 0; i < N; i++) {
-                    result[i][j] = dctColumn[i];
-                }
-            }
-        } else {
-            for (int j = 0; j < N; j++) {
-                double[] column = new double[N];
-                for (int i = 0; i < N; i++) {
-                    column[i] = matrix[i][j];
-                }
-                double[] dctColumn = compute1DDCT(column, N);
-                for (int i = 0; i < N; i++) {
-                    intermediate[i][j] = dctColumn[i];
-                }
-            }
-            for (int i = 0; i < N; i++) {
-                result[i] = compute1DDCT(intermediate[i], N);
-            }
-        }
-
-        return result;
-    }
-    private double[] compute1DDCT(double[] data, int N) {
-        double[] result = new double[N];
-        double alpha;
-
-        for (int k = 0; k < N; k++) {
-            alpha = (k == 0) ? Math.sqrt(1.0 / N) : Math.sqrt(2.0 / N);
-            result[k] = 0;
-            for (int n = 0; n < N; n++) {
-                result[k] += data[n] * Math.cos(Math.PI * (n + 0.5) * k / N);
-            }
-            result[k] *= alpha;
-        }
-
-        return result;
-    }
-    public double[] perform2DDCT() {
-        double[][] coefficients = createTransformMatrix(8);
-//        double[][] row1 = new double[][]{new double[]{100.0},
-//                new double[]{110.0}, new double[]{120.0},
-//                new double[]{130.0}, new double[]{140.0},
-//                new double[]{150.0}, new double[]{160}, new double[]{170}};
-        double[] row1 = {100.0, 110.0, 120.0, 130.0, 140.0, 150.0, 160.0, 170.0};
-        return multiplyMatrixVector(coefficients, row1);
-    }
-//    public double[][] multiplyMatrices(double[][] matrixA, double[][] matrixB) {
-//        int rowsA = matrixA.length;
-//        int colsA = matrixA[0].length;
-//        int rowsB = matrixB.length;
-//        int colsB = matrixB[0].length;
-//
-//        if (colsA != rowsB) {
-//            throw new IllegalArgumentException("Matrix multiplication is not possible: Columns of A must match rows of B.");
-//        }
-//
-//        double[][] result = new double[rowsA][colsB];
-//        for (int i = 0; i < rowsA; i++) {
-//            for (int j = 0; j < colsB; j++) {
-//                result[i][j] = 0;
-//                for (int k = 0; k < colsA; k++) {
-//                    result[i][j] += matrixA[i][k] * matrixB[k][j];
-//                }
-//            }
-//        }
-//        return result;
-//    }
-public double[][] transformMatrixRows(double[][] matrix) {
-    int n = matrix.length;
-
-    // Create the transform matrix
+public double[][] perform2DDCT(double[][] inputMatrix, boolean isRowFirst) {
+    int n = inputMatrix.length;
     double[][] transformMatrix = createTransformMatrix(n);
+    double[][] intermediate = new double[n][n];
+    double[][] resultMatrix = new double[n][n];
 
-    // Result matrix after transformation
-    double[][] transformedMatrix = new double[n][n];
+    if (isRowFirst){
+        //apply T to each row
+        for (int i = 0; i < n; i++) {
+            double[] row = inputMatrix[i];
+            intermediate[i] = multiplyMatrixVector(transformMatrix, row);
+        }
 
-    // Apply the transform to each row
-    for (int i = 0; i < n; i++) {
-        transformedMatrix[i] = multiplyMatrixVector(transformMatrix, matrix[i]);
+        //apply T to each col
+        for (int j = 0; j < n; j++) {
+            double[] column = getValuesOfColumn(intermediate, j);
+            double[] dctColumn = multiplyMatrixVector(transformMatrix, column);
+            for (int i = 0; i < n; i++) {
+                resultMatrix[i][j] = dctColumn[i];
+            }
+        }
+    }
+    else {
+        for (int j = 0; j < n; j++) {
+            double[] column = getValuesOfColumn(inputMatrix, j);
+            double[] dctColumn = multiplyMatrixVector(transformMatrix, column);
+            for (int i = 0; i < n; i++) {
+                intermediate[i][j] = dctColumn[i];
+            }
+        }
+        for (int i = 0; i < n; i++) {
+            resultMatrix[i] = multiplyMatrixVector(transformMatrix, intermediate[i]);
+        }
     }
 
-    return transformedMatrix;
+    return resultMatrix;
 }
-    public double[] multiplyMatrixVector(double[][] matrix, double[] vector) {
+    private double[] getValuesOfColumn(double[][] matrix, int colIndex) {
+        int n = matrix.length;
+        double[] column = new double[n];
+        for (int i = 0; i < n; i++) {
+            column[i] = matrix[i][colIndex];
+        }
+        return column;
+    }
+    private double[] multiplyMatrixVector(double[][] matrix, double[] vector) {
         int n = matrix.length;
         if (vector.length != n) {
             throw new IllegalArgumentException("Matrix and vector dimensions do not match.");
@@ -111,10 +60,9 @@ public double[][] transformMatrixRows(double[][] matrix) {
                 result[i] = 0;
             }
         }
-
         return result;
     }
-    public double[][] createTransformMatrix(int N) {
+    private double[][] createTransformMatrix(int N) {
         double[][] coefficients = new double[N][N];
         double sqrt1N = Math.sqrt(1.0 / N);
         double sqrt2N = Math.sqrt(2.0 / N);
@@ -131,7 +79,6 @@ public double[][] transformMatrixRows(double[][] matrix) {
         if (matrix1.length != matrix2.length || matrix1[0].length != matrix2[0].length) {
             return false;
         }
-
         for (int i = 0; i < matrix1.length; i++) {
             for (int j = 0; j < matrix1[i].length; j++) {
                 if (Math.round(matrix1[i][j]) != Math.round(matrix2[i][j])) {
@@ -139,7 +86,6 @@ public double[][] transformMatrixRows(double[][] matrix) {
                 }
             }
         }
-
         return true;
     }
 }

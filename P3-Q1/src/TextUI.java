@@ -37,8 +37,7 @@ class TextUI {
         System.out.println(message);
         for (double[] row : matrix) {
             for (double value : row) {
-//                System.out.print(Math.round(value) + " ");
-                System.out.printf("%.2f" + " ", value);
+                System.out.print(Math.round(value) + " ");
             }
             System.out.println();
         }
